@@ -1,0 +1,15 @@
+datetime,money,type,detail,target,payment,image1,image2
+2025/1/31,123,食,飯,F,ApplePay,554d9dfc-84cb-4136-9137-c352cfe18faf.jpg,4e56314d-8243-44b5-8166-1b2604a05e92.jpg
+2025/2/31,345,食,飯,F,ApplePay,5a62ee68-492a-4961-b82e-01c17f6aed17.jpg,0bf7dd08-d8d7-4318-9d2c-bee9e3c64ee7.jpg
+2025/3/31,456,食,飯,F,ApplePay,1ed552b8-12c8-43da-9ac5-a48666ea584c.jpg,beeb2274-07b9-4095-9437-6ce8fbccfccc.jpg
+2025/4/31,678,食,飯,F,ApplePay,e5579e2a-f893-46e1-beb6-ab21cc435d3c.jpg,712a6eaa-9763-46f1-9448-f8f6dd962dcb.jpg
+2025/5/31,222,食,飯,F,ApplePay,49dad799-493f-4764-a541-5e030ed5b9b2.jpg,0b079cd8-fb15-4caf-815c-12da7e218eb1.jpg
+2025/6/31,222,食,飯,F,ApplePay,b79be63d-f110-40d4-84c9-3513fbbe0e76.jpg,618c0f29-6075-4eae-872f-4c60a883d717.jpg
+2025/1/11,333,食,飯,S,ApplePay,1f666cd5-6c7c-4c14-ba1b-e1a04084b080.jpg,7b04e40f-b4b1-40b9-acff-1db3719e8987.jpg
+2025/2/22,333,食,飯,S,Cash,0f165e3d-94b8-4338-a451-5b465957d0b3.jpg,7ac07a42-7180-48ba-b692-e6edc787f410.jpg
+2025/2/8,333,食,飯,S,LinePay,129189ec-85e2-4b06-a77b-ac3ce8b46ae1.jpg,f9133dd6-c262-45e5-ab7d-676a0b8c58a5.jpg
+2025/3/6,333,育,Lesson,S,LinePay,c4ad5f9b-e6c1-4faa-a00a-b1d0d85878e0.jpg,889e9552-47b6-47f2-8eff-299118e7e942.jpg
+2025/3/4,333,育,Lesson,S,ApplePay,cf4c2168-4fc6-461d-8481-e98597d18ecc.jpg,76740b69-b3d3-48d6-a0e5-f4beb24ada89.jpg
+2025/6/21,1234,食,飯,F,ApplePay,5c7612eb-65bf-47f4-8cc8-fb51cb4226a9.jpg,33a83293-42ef-40c4-bc80-5d21b03787a5.jpg
+2025/7/01,123456,食,飯,F,ApplePay,cd2427b8-a240-403d-8528-302771a78b3c.jpg,59f5b9bb-d0e0-4930-a2e4-ab22e6281b08.jpg
+2025/7/21,123456,食,飯,F,ApplePay,125b6aef-a587-416b-919a-3cbed5c708bd.jpg,34a19774-a585-4e2b-82dc-926322f631a9.jpg

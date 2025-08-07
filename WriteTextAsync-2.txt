@@ -1,0 +1,6 @@
+target,type,payment,detail,money
+F,食,Cash,飯,456
+target,type,payment,detail,money
+F,食,Cash,飯,456
+target,type,payment,detail,money
+F,食,Cash,飯,456
