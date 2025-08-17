@@ -34,8 +34,8 @@ namespace Accounting.Forms
             Type.DataSource = DataModels.type;
             Target.DataSource = DataModels.target;
             Payment.DataSource = DataModels.payment;
-            pictureBox1.Image = Image.FromFile("C:\\Users\\Albert\\Github\\repos\\private\\c_sharp\\leo_class\\winform\\Accounting\\cloud-upload.jpg");
-            pictureBox2.Image = Image.FromFile("C:\\Users\\Albert\\Github\\repos\\private\\c_sharp\\leo_class\\winform\\Accounting\\cloud-upload.jpg");
+            pictureBox1.Image = Image.FromFile("C:\\Users\\Albert\\Github\\repos\\private\\c_sharp\\leo_class\\winform\\AccountingDatas\\cloud-upload.jpg");
+            pictureBox2.Image = Image.FromFile("C:\\Users\\Albert\\Github\\repos\\private\\c_sharp\\leo_class\\winform\\AccountingDatas\\cloud-upload.jpg");
         }
 
         private void Type_SelectedIndexChanged(object sender, EventArgs e)

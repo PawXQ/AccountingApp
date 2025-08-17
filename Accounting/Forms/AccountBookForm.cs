@@ -24,6 +24,9 @@ namespace Accounting.Forms
     public partial class AccountBookForm : Form
     {
         private List<AccountRecord> record_list = new List<AccountRecord>();
+        string path = "C:\\Users\\Albert\\Github\\repos\\private\\c_sharp\\leo_class\\winform\\AccountingDatas";
+        string recordFile = "records.csv";
+
         public AccountBookForm()
         {
             InitializeComponent();
@@ -42,10 +45,8 @@ namespace Accounting.Forms
             var diff = endDatePicker.Value - startDatePicker.Value;
             int diffDays = diff.Days;
 
-            dataGridView1.CellValueChanged += new DataGridViewCellEventHandler(dataGridView1_CellValueChanged);
-            dataGridView1.CurrentCellDirtyStateChanged += new EventHandler(dataGridView1_CurrentCellDirtyStateChanged);
 
-
+            this.record_list.Clear();
             dataGridView1.DataSource = null;
             dataGridView1.Columns.Clear();
             dataGridView1.Rows.Clear();
@@ -53,13 +54,10 @@ namespace Accounting.Forms
             GC.Collect();
 
 
-            string path = "C:\\Users\\Albert\\Github\\repos\\private\\c_sharp\\leo_class\\winform\\AccountingDatas";
-            string file = "records.csv";
-
             for (int i = 0; i < diffDays + 1; i++)
             {
                 string directory = startDatePicker.Value.AddDays(i).ToString("yyyy-MM-dd");
-                string filePath = Path.Combine(path, directory, file);
+                string filePath = Path.Combine(this.path, directory, this.recordFile);
                 if (!File.Exists(filePath)) { continue; }
                 this.record_list.AddRange(CSVHelper.Read<AccountRecord>(filePath));
             }
@@ -76,10 +74,15 @@ namespace Accounting.Forms
             // 3.將record_list 跑 for loop 逐一建立每一筆的DataGridRow
             // 4.將每一筆DataGridRow裡面的 DataGridTextboxCell 填充該筆 list內的資料到每一格cell內
 
-            var props = typeof(AccountRecord).GetProperties();
 
-            foreach (var prop in props)
+            foreach (var prop in typeof(AccountRecord).GetProperties())
             {
+                bool? IsReadOnly = prop.GetCustomAttribute<ReadOnlyAttribute>()?.IsReadOnly;
+                if (IsReadOnly != null && IsReadOnly.Value)
+                {
+                    dataGridView1.Columns[prop.Name].ReadOnly = true;
+                }
+
                 if (prop.GetCustomAttribute<ComboBoxColumnAttribute>() != null)
                 {
                     DataGridViewComboBoxColumn dataGridViewComboBoxColumn = new DataGridViewComboBoxColumn()
@@ -117,11 +120,13 @@ namespace Accounting.Forms
                 ImageLayout = DataGridViewImageCellLayout.Zoom,
                 DefaultCellStyle = new DataGridViewCellStyle()
                 {
-                    NullValue = new Bitmap("C:\\Users\\Albert\\Github\\repos\\private\\c_sharp\\leo_class\\winform\\Accounting\\" + "istockphoto.jpg")
+                    NullValue = new Bitmap(Path.Combine(path, "istockphoto.jpg"))
                 }
             };
 
             dataGridView1.Columns.Add(trashImageColumn);
+
+
 
             for (int row = 0; row < dataGridView1.Rows.Count; row++)
             {
@@ -129,8 +134,11 @@ namespace Accounting.Forms
                     .OfType<DataGridViewImageCell>()
                     .Where(x => dataGridView1.Columns[x.ColumnIndex].HeaderText != "丟棄")
                     .ToList()
-                    .ForEach(x => x.Value = new Bitmap(dataGridView1.Rows[row].Cells[dataGridView1.Columns[x.ColumnIndex].Tag.ToString()].Value.ToString()));
-
+                    .ForEach(x =>
+                    {
+                        byte[] imageBytes = File.ReadAllBytes(dataGridView1.Rows[row].Cells[dataGridView1.Columns[x.ColumnIndex].Tag.ToString()].Value.ToString());
+                        x.Value = new Bitmap(new MemoryStream(imageBytes));
+                    });
 
                 var detailCombobox = dataGridView1.Rows[row].Cells
                    .OfType<DataGridViewComboBoxCell>()
@@ -139,6 +147,9 @@ namespace Accounting.Forms
                 detailCombobox.DataSource = DataModels.Type_Mapping[dataGridView1.Rows[row].Cells["type"].Value.ToString()];
                 detailCombobox.Value = dataGridView1.Rows[row].Cells["detail"].Value;
             }
+
+            dataGridView1.CellValueChanged += new DataGridViewCellEventHandler(dataGridView1_CellValueChanged);
+            dataGridView1.CurrentCellDirtyStateChanged += new EventHandler(dataGridView1_CurrentCellDirtyStateChanged);
         }
         private void button1_Click(object sender, EventArgs e)
         {
@@ -155,18 +166,67 @@ namespace Accounting.Forms
             if (e.ColumnIndex < 0) { return; }
 
             DataGridViewCellCollection dataGridViewCellCollection = dataGridView1.Rows[e.RowIndex].Cells;
+
+            if (dataGridViewCellCollection[e.ColumnIndex] is DataGridViewImageCell &&
+                dataGridView1.Columns[e.ColumnIndex].HeaderText == "丟棄")
+            {
+                typeof(AccountRecord).GetProperties()
+                    .Where(x => x.GetCustomAttribute<ImageColumnAttribute>() != null)
+                    .ToList()
+                    .ForEach(x =>
+                    {
+                        var imageLocation = dataGridView1.Rows[e.RowIndex].Cells[x.Name].Value.ToString();
+                        var imagePopLocation = reOrgImagePath(imageLocation);
+                        ((Bitmap)dataGridView1.Rows[e.RowIndex].Cells[$"{x.Name}_image"].Value).Dispose();
+                        File.Delete(imageLocation.ToString());
+                        File.Delete(imagePopLocation.ToString());
+                    });
+
+
+                //dataGridView1.Rows[e.RowIndex].Cells
+                //    .OfType<DataGridViewImageCell>()
+                //    .Where(x => x.Value != null)
+                //    .ToList()
+                //    .ForEach(x =>
+                //    {
+                //        string propName = dataGridView1.Columns[x.ColumnIndex].Tag.ToString();
+                //        var imageLocation = dataGridView1.Rows[e.RowIndex].Cells[propName].Value.ToString();
+                //        var imagePopLocation = reOrgImagePath(imageLocation);
+                //        ((Bitmap)dataGridView1.Rows[e.RowIndex].Cells[$"{propName}_image"].Value).Dispose();
+                //        File.Delete(imageLocation.ToString());
+                //        File.Delete(imagePopLocation.ToString());
+                //    });
+
+                string deleteDatetime = dataGridView1.Rows[e.RowIndex].Cells["datetime"].Value.ToString();
+
+                AccountRecord removedRecored = record_list[e.RowIndex];
+                record_list.Remove(removedRecored);
+                var remainDatas = record_list.Where(x => x.datetime == removedRecored.datetime).ToList();
+
+                string reWriteRecordFile = Path.Combine(this.path, deleteDatetime, this.recordFile);
+
+                Console.WriteLine(reWriteRecordFile);
+                File.Delete(Path.Combine(this.path, deleteDatetime, this.recordFile));
+                CSVHelper.WriteList(reWriteRecordFile, remainDatas, true);
+
+
+                string directoryName = Path.GetDirectoryName(removedRecored.image1.ToString());
+                if (Directory.GetFiles(directoryName).Length == 0)
+                {
+                    Directory.Delete(Path.Combine(this.path, deleteDatetime), true);
+                }
+
+                this.loadData();
+                return;
+            }
+
             if (dataGridViewCellCollection[e.ColumnIndex] is DataGridViewImageCell)
             {
                 var columnValue = dataGridView1.Columns[e.ColumnIndex].Tag.ToString();
                 var originImagePath = dataGridView1.Rows[e.RowIndex].Cells[columnValue].Value.ToString();
-                string[] pathArray = originImagePath.ToString().Split('\\');
-                string fileName = pathArray[pathArray.Length - 1];
-                string newFileName = "popup_" + fileName;
-                pathArray[pathArray.Length - 1] = newFileName;
-                string newPath = string.Join("\\", pathArray);
+                var popImagePath = reOrgImagePath(originImagePath.ToString());
 
-
-                Form imageBox = new ImageBox($"{newPath}");
+                Form imageBox = new ImageBox($"{popImagePath}");
                 imageBox.ShowDialog();
             }
         }
@@ -180,6 +240,11 @@ namespace Accounting.Forms
                 cellDetail.DataSource = datas;
                 cellDetail.Value = datas[0];
             }
+
+            string reWriteDatetime = dataGridView1.Rows[e.RowIndex].Cells["datetime"].Value.ToString();
+            string reWriteRecordFile = Path.Combine(this.path, reWriteDatetime, this.recordFile);
+            File.Delete(Path.Combine(this.path, reWriteDatetime, this.recordFile));
+            CSVHelper.WriteList(reWriteRecordFile, record_list, true);
         }
 
         private void dataGridView1_CurrentCellDirtyStateChanged(object sender, EventArgs e)
@@ -191,6 +256,15 @@ namespace Accounting.Forms
             }
         }
 
+        private string reOrgImagePath(string path)
+        {
+            string[] pathArray = path.ToString().Split('\\');
+            string fileName = pathArray[pathArray.Length - 1];
+            string newFileName = "popup_" + fileName;
+            pathArray[pathArray.Length - 1] = newFileName;
+            string newPath = string.Join("\\", pathArray);
 
+            return newPath;
+        }
     }
 }

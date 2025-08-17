@@ -11,6 +11,7 @@ namespace Accounting.Models
     internal class AccountRecord
     {
         [DisplayName("日期")]
+        [ReadOnly(true)]
         public string datetime { get; set; }
 
         [DisplayName("金額")]
@@ -43,11 +44,6 @@ namespace Accounting.Models
 
         public AccountRecord() { }
 
-        public AccountRecord(
-            string datetime, string target,
-            string type, string payment,
-            string detail, string money,
-            string image1, string image2)
-        { }
+
     }
 }

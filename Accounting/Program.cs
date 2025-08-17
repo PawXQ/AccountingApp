@@ -1,5 +1,6 @@
 ﻿using Accounting.Components;
 using Accounting.Forms;
+using Accounting.Utinity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,15 @@ namespace Accounting
         [STAThread]
         static void Main()
         {
+
+            Student student = new Student();
+            student.Name = 100;
+
+            student = student + 20;
+
+
+
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Form AccountBookForm = SignletoForm.CreateForm("AccountBookForm");
