@@ -1,6 +1,7 @@
 ﻿using Accounting.Attributes;
 using Accounting.Models;
-using Accounting.Utinity;
+using Accounting.Presenter;
+using Accounting.Utility;
 using CSVLibrary;
 using System;
 using System.Collections.Generic;
@@ -16,20 +17,23 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static Accounting.Contracts.ModifyRecordContract;
 
 namespace Accounting.Forms
 {
     [DisplayName("記帳本")]
     [Order(2)]
-    public partial class AccountBookForm : Form
+    internal partial class AccountBookForm : Form, IModifyRecordView
     {
+        IModifyRecordPresenter modifyRecordPresenter;
+
         private List<AccountRecord> record_list = new List<AccountRecord>();
         string path = "C:\\Users\\Albert\\Github\\repos\\private\\c_sharp\\leo_class\\winform\\AccountingDatas";
-        string recordFile = "records.csv";
 
         public AccountBookForm()
         {
             InitializeComponent();
+            this.modifyRecordPresenter = new ModifyRecordPresenter(this);
         }
 
         private void AccountBookForm_Load(object sender, EventArgs e)
@@ -40,35 +44,19 @@ namespace Accounting.Forms
             this.endDatePicker.Value = new DateTime(year, month + 1, 1).AddDays(-1);
             this.dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
-        private void loadData()
+        private void RenderData()
         {
-            var diff = endDatePicker.Value - startDatePicker.Value;
-            int diffDays = diff.Days;
-
-
-            this.record_list.Clear();
             dataGridView1.DataSource = null;
             dataGridView1.Columns.Clear();
             dataGridView1.Rows.Clear();
 
             GC.Collect();
 
-
-            for (int i = 0; i < diffDays + 1; i++)
-            {
-                string directory = startDatePicker.Value.AddDays(i).ToString("yyyy-MM-dd");
-                string filePath = Path.Combine(this.path, directory, this.recordFile);
-                if (!File.Exists(filePath)) { continue; }
-                this.record_list.AddRange(CSVHelper.Read<AccountRecord>(filePath));
-            }
-
+            dataGridView1.DataSource = this.record_list;
 
             //DataGridColumn 欄 (父類別)
             //DataGridRow 列
             //DataGridCell 格
-
-            //List<AccountRecord> record_list = CSVHelper.Read<AccountRecord>(filePath);
-            dataGridView1.DataSource = this.record_list;
             // 1.根據AccountRecord 類別進行反射找出所有Property
             // 2.根據每一個Property統一建立DataGridTextboxColumn
             // 3.將record_list 跑 for loop 逐一建立每一筆的DataGridRow
@@ -85,47 +73,16 @@ namespace Accounting.Forms
 
                 if (prop.GetCustomAttribute<ComboBoxColumnAttribute>() != null)
                 {
-                    DataGridViewComboBoxColumn dataGridViewComboBoxColumn = new DataGridViewComboBoxColumn()
-                    {
-                        Name = prop.Name + "_combobox",
-                        HeaderText = prop.GetCustomAttribute<DisplayNameAttribute>().DisplayName,
-                        DataSource = prop.Name == "detail" ? null : typeof(DataModels).GetField(prop.Name, BindingFlags.Public | BindingFlags.Static).GetValue(null),
-                        Tag = prop.Name,
-                        DataPropertyName = prop.Name,
-                    };
-
-                    int currentColumnIndex = dataGridView1.Columns[prop.Name].Index;
-                    dataGridView1.Columns.Insert(currentColumnIndex, dataGridViewComboBoxColumn);
-                    dataGridView1.Columns[prop.Name].Visible = false;
+                    this.dataGridView1.GenerateComboboxColumn(prop);
                 }
 
                 if (prop.GetCustomAttribute<ImageColumnAttribute>() != null)
                 {
-                    DataGridViewImageColumn dataGridViewImageColumn = new DataGridViewImageColumn()
-                    {
-                        Name = prop.Name + "_image",
-                        HeaderText = prop.GetCustomAttribute<DisplayNameAttribute>().DisplayName,
-                        Tag = prop.Name
-                    };
-
-                    int currentColumnIndex = dataGridView1.Columns[prop.Name].Index;
-                    dataGridView1.Columns.Insert(currentColumnIndex, dataGridViewImageColumn);
-                    dataGridView1.Columns[prop.Name].Visible = false;
+                    this.dataGridView1.GenerateImageColumn(prop);
                 }
             }
 
-            DataGridViewImageColumn trashImageColumn = new DataGridViewImageColumn()
-            {
-                HeaderText = $"丟棄",
-                ImageLayout = DataGridViewImageCellLayout.Zoom,
-                DefaultCellStyle = new DataGridViewCellStyle()
-                {
-                    NullValue = new Bitmap(Path.Combine(path, "istockphoto.jpg"))
-                }
-            };
-
-            dataGridView1.Columns.Add(trashImageColumn);
-
+            this.dataGridView1.GenerateTrashImageColumn(headerText: "丟棄", path: path);
 
 
             for (int row = 0; row < dataGridView1.Rows.Count; row++)
@@ -158,7 +115,7 @@ namespace Accounting.Forms
                 MessageBox.Show(text: "End Time can't before start time");
                 return;
             }
-            this.DebunceTime(this.loadData, 1000);
+            this.DebunceTime(() => modifyRecordPresenter.GetRecord(startDatePicker.Value, endDatePicker.Value), 1000);
         }
 
         private void dataGridView1_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
@@ -170,53 +127,27 @@ namespace Accounting.Forms
             if (dataGridViewCellCollection[e.ColumnIndex] is DataGridViewImageCell &&
                 dataGridView1.Columns[e.ColumnIndex].HeaderText == "丟棄")
             {
-                typeof(AccountRecord).GetProperties()
-                    .Where(x => x.GetCustomAttribute<ImageColumnAttribute>() != null)
-                    .ToList()
-                    .ForEach(x =>
-                    {
-                        var imageLocation = dataGridView1.Rows[e.RowIndex].Cells[x.Name].Value.ToString();
-                        var imagePopLocation = reOrgImagePath(imageLocation);
-                        ((Bitmap)dataGridView1.Rows[e.RowIndex].Cells[$"{x.Name}_image"].Value).Dispose();
-                        File.Delete(imageLocation.ToString());
-                        File.Delete(imagePopLocation.ToString());
-                    });
+                //TODO: 這裡之後會用AutoMapper 做掉
 
+                ModifyRecordDTO modifyRecordDTO = new ModifyRecordDTO();
+                AccountRecord deletedAccountRecord = this.record_list[e.RowIndex];
 
-                //dataGridView1.Rows[e.RowIndex].Cells
-                //    .OfType<DataGridViewImageCell>()
-                //    .Where(x => x.Value != null)
-                //    .ToList()
-                //    .ForEach(x =>
-                //    {
-                //        string propName = dataGridView1.Columns[x.ColumnIndex].Tag.ToString();
-                //        var imageLocation = dataGridView1.Rows[e.RowIndex].Cells[propName].Value.ToString();
-                //        var imagePopLocation = reOrgImagePath(imageLocation);
-                //        ((Bitmap)dataGridView1.Rows[e.RowIndex].Cells[$"{propName}_image"].Value).Dispose();
-                //        File.Delete(imageLocation.ToString());
-                //        File.Delete(imagePopLocation.ToString());
-                //    });
+                PropertyInfo[] accountRecordProps = typeof(AccountRecord).GetProperties();
 
-                string deleteDatetime = dataGridView1.Rows[e.RowIndex].Cells["datetime"].Value.ToString();
-
-                AccountRecord removedRecored = record_list[e.RowIndex];
-                record_list.Remove(removedRecored);
-                var remainDatas = record_list.Where(x => x.datetime == removedRecored.datetime).ToList();
-
-                string reWriteRecordFile = Path.Combine(this.path, deleteDatetime, this.recordFile);
-
-                Console.WriteLine(reWriteRecordFile);
-                File.Delete(Path.Combine(this.path, deleteDatetime, this.recordFile));
-                CSVHelper.WriteList(reWriteRecordFile, remainDatas, true);
-
-
-                string directoryName = Path.GetDirectoryName(removedRecored.image1.ToString());
-                if (Directory.GetFiles(directoryName).Length == 0)
+                foreach (PropertyInfo sourceProp in accountRecordProps)
                 {
-                    Directory.Delete(Path.Combine(this.path, deleteDatetime), true);
+                    object sourceValue = sourceProp.GetValue(deletedAccountRecord);
+                    PropertyInfo destProp = typeof(ModifyRecordDTO).GetProperty(sourceProp.Name);
+                    if (destProp != null)
+                    {
+                        object destValue = Convert.ChangeType(sourceValue, destProp.PropertyType);
+                        destProp.SetValue(modifyRecordDTO, destValue);
+                    }
                 }
 
-                this.loadData();
+                modifyRecordPresenter.DeleteRecord(modifyRecordDTO);
+                modifyRecordPresenter.GetRecord(startDatePicker.Value, endDatePicker.Value);
+
                 return;
             }
 
@@ -241,10 +172,24 @@ namespace Accounting.Forms
                 cellDetail.Value = datas[0];
             }
 
-            string reWriteDatetime = dataGridView1.Rows[e.RowIndex].Cells["datetime"].Value.ToString();
-            string reWriteRecordFile = Path.Combine(this.path, reWriteDatetime, this.recordFile);
-            File.Delete(Path.Combine(this.path, reWriteDatetime, this.recordFile));
-            CSVHelper.WriteList(reWriteRecordFile, record_list, true);
+            //TODO: 這裡之後會用AutoMapper 做掉
+            ModifyRecordDTO modifyRecordDTO = new ModifyRecordDTO();
+            AccountRecord modifyAccountRecord = this.record_list[e.RowIndex];
+
+            PropertyInfo[] accountRecordProps = typeof(AccountRecord).GetProperties();
+
+            foreach (PropertyInfo sourceProp in accountRecordProps)
+            {
+                object sourceValue = sourceProp.GetValue(modifyAccountRecord);
+                PropertyInfo destProp = typeof(ModifyRecordDTO).GetProperty(sourceProp.Name);
+                if (destProp != null)
+                {
+                    object destValue = Convert.ChangeType(sourceValue, destProp.PropertyType);
+                    destProp.SetValue(modifyRecordDTO, destValue);
+                }
+            }
+
+            modifyRecordPresenter.ModifyRecord(modifyRecordDTO);
         }
 
         private void dataGridView1_CurrentCellDirtyStateChanged(object sender, EventArgs e)
@@ -260,11 +205,30 @@ namespace Accounting.Forms
         {
             string[] pathArray = path.ToString().Split('\\');
             string fileName = pathArray[pathArray.Length - 1];
-            string newFileName = "popup_" + fileName;
+            string newFileName = "pop_" + fileName;
             pathArray[pathArray.Length - 1] = newFileName;
             string newPath = string.Join("\\", pathArray);
 
             return newPath;
+        }
+
+        public void RenderDateGridView(List<ModifyRecordDTO> modifyRecordDTOList)
+        {
+            this.record_list.Clear();
+            this.record_list = modifyRecordDTOList
+                .Select(x => new AccountRecord
+                {
+                    datetime = x.datetime,
+                    money = x.money,
+                    type = x.type,
+                    detail = x.detail,
+                    target = x.target,
+                    payment = x.payment,
+                    image1 = x.image1,
+                    image2 = x.image2,
+                }).ToList();
+
+            RenderData();
         }
     }
 }

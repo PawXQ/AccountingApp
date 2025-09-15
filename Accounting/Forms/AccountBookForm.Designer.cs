@@ -80,6 +80,7 @@ namespace Accounting.Forms
             // 
             this.navbar1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.navbar1.Location = new System.Drawing.Point(0, 402);
+            this.navbar1.Margin = new System.Windows.Forms.Padding(4);
             this.navbar1.Name = "navbar1";
             this.navbar1.Size = new System.Drawing.Size(896, 81);
             this.navbar1.TabIndex = 5;

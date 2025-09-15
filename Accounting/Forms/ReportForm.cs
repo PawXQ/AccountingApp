@@ -19,5 +19,6 @@ namespace Accounting.Forms
         {
             InitializeComponent();
         }
+
     }
 }
