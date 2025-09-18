@@ -127,23 +127,10 @@ namespace Accounting.Forms
             if (dataGridViewCellCollection[e.ColumnIndex] is DataGridViewImageCell &&
                 dataGridView1.Columns[e.ColumnIndex].HeaderText == "丟棄")
             {
-                //TODO: 這裡之後會用AutoMapper 做掉
-
-                ModifyRecordDTO modifyRecordDTO = new ModifyRecordDTO();
                 AccountRecord deletedAccountRecord = this.record_list[e.RowIndex];
 
-                PropertyInfo[] accountRecordProps = typeof(AccountRecord).GetProperties();
+                ModifyRecordDTO modifyRecordDTO = Utility.Mapper.Map<AccountRecord, ModifyRecordDTO>(deletedAccountRecord);
 
-                foreach (PropertyInfo sourceProp in accountRecordProps)
-                {
-                    object sourceValue = sourceProp.GetValue(deletedAccountRecord);
-                    PropertyInfo destProp = typeof(ModifyRecordDTO).GetProperty(sourceProp.Name);
-                    if (destProp != null)
-                    {
-                        object destValue = Convert.ChangeType(sourceValue, destProp.PropertyType);
-                        destProp.SetValue(modifyRecordDTO, destValue);
-                    }
-                }
 
                 modifyRecordPresenter.DeleteRecord(modifyRecordDTO);
                 modifyRecordPresenter.GetRecord(startDatePicker.Value, endDatePicker.Value);
@@ -172,22 +159,10 @@ namespace Accounting.Forms
                 cellDetail.Value = datas[0];
             }
 
-            //TODO: 這裡之後會用AutoMapper 做掉
-            ModifyRecordDTO modifyRecordDTO = new ModifyRecordDTO();
             AccountRecord modifyAccountRecord = this.record_list[e.RowIndex];
 
-            PropertyInfo[] accountRecordProps = typeof(AccountRecord).GetProperties();
+            ModifyRecordDTO modifyRecordDTO = Utility.Mapper.Map<AccountRecord, ModifyRecordDTO>(modifyAccountRecord);
 
-            foreach (PropertyInfo sourceProp in accountRecordProps)
-            {
-                object sourceValue = sourceProp.GetValue(modifyAccountRecord);
-                PropertyInfo destProp = typeof(ModifyRecordDTO).GetProperty(sourceProp.Name);
-                if (destProp != null)
-                {
-                    object destValue = Convert.ChangeType(sourceValue, destProp.PropertyType);
-                    destProp.SetValue(modifyRecordDTO, destValue);
-                }
-            }
 
             modifyRecordPresenter.ModifyRecord(modifyRecordDTO);
         }
@@ -215,18 +190,9 @@ namespace Accounting.Forms
         public void RenderDateGridView(List<ModifyRecordDTO> modifyRecordDTOList)
         {
             this.record_list.Clear();
-            this.record_list = modifyRecordDTOList
-                .Select(x => new AccountRecord
-                {
-                    datetime = x.datetime,
-                    money = x.money,
-                    type = x.type,
-                    detail = x.detail,
-                    target = x.target,
-                    payment = x.payment,
-                    image1 = x.image1,
-                    image2 = x.image2,
-                }).ToList();
+
+            List<AccountRecord> accountRecords = Utility.Mapper.Map<ModifyRecordDTO, AccountRecord>(modifyRecordDTOList).ToList();
+            this.record_list = accountRecords;
 
             RenderData();
         }

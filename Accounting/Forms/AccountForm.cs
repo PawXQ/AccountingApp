@@ -28,9 +28,6 @@ namespace Accounting.Forms
             InitializeComponent();
 
             this.addRecordPresenter = new AddRecordPresenter(this);
-            //DialogResult dialogResult = MessageBox.Show(text: "text", caption: "title", MessageBoxButtons.YesNoCancel);
-            //Console.WriteLine(dialogResult);
-            //Console.WriteLine(DialogResult.OK);
             Initial();
         }
 
@@ -45,10 +42,6 @@ namespace Accounting.Forms
 
         private void Type_SelectedIndexChanged(object sender, EventArgs e)
         {
-            //if (Type.SelectedValue is string)
-            //{
-            //    Detail.DataSource = DataModels.Type_Mapping[Type.SelectedValue.ToString()];
-            //}
             addRecordPresenter.GetTypeDetailList(Type.SelectedValue.ToString());
         }
 
@@ -60,7 +53,6 @@ namespace Accounting.Forms
                 openFileDialog.Filter = "圖片檔|*.png;*.jpg;*.JPEG";
                 //openFileDialog.Filter = "PNG|*.png|JPG|*.jpg";
                 DialogResult dialogsResult = openFileDialog.ShowDialog();
-                //if (dialogsResult == DialogResult.OK) { pictureBox.Image = Image.FromFile(openFileDialog.FileName); }
                 if (dialogsResult == DialogResult.OK)
                 {
                     if (pictureBox.Image != null)
